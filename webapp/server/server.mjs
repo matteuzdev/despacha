@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import http from 'node:http';
-import fs from 'node:fs/promises';
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -70,12 +71,12 @@ async function ensureDataFile() {
 
 async function readState() {
   await ensureDataFile();
-  return JSON.parse(await fs.readFile(dataFile, 'utf8'));
+  return JSON.parse(await fsp.readFile(dataFile, 'utf8'));
 }
 
 async function writeState(state) {
-  await fs.mkdir(dataDir, { recursive: true });
-  await fs.writeFile(dataFile, `${JSON.stringify(state, null, 2)}\n`);
+  await fsp.mkdir(dataDir, { recursive: true });
+  await fsp.writeFile(dataFile, `${JSON.stringify(state, null, 2)}\n`);
 }
 
 async function readBody(request) {
@@ -440,12 +441,67 @@ async function handleRequest(request, response) {
       return;
     }
 
-    notFound(response);
+    // ── Serve Frontend (SPA) ───────────────────────────
+    // Se não for rota de API, serve o index.html do build
+    await serveFrontend(request, response);
+    return;
   } catch (error) {
     send(response, 500, { error: error instanceof Error ? error.message : 'Internal server error' });
   }
 }
 
+// ── Static file serving for SPA ──────────────────────────
+const distDir = path.join(root, '..', 'dist');
+
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.ico': 'image/x-icon',
+  '.webp': 'image/webp',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.json': 'application/json',
+  '.txt': 'text/plain; charset=utf-8',
+};
+
+async function serveFrontend(request, response) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    response.writeHead(405);
+    response.end();
+    return;
+  }
+
+  const url = new URL(request.url ?? '/', `http://${request.headers.host}`);
+  let filePath = path.join(distDir, url.pathname === '/' ? 'index.html' : url.pathname);
+
+  // Se o arquivo não existe, serve index.html (SPA fallback)
+  try {
+    if (!fs.existsSync(filePath)) {
+      filePath = path.join(distDir, 'index.html');
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const content = await fsp.readFile(filePath);
+
+    response.writeHead(200, {
+      'content-type': contentType,
+      'content-length': content.length,
+      'cache-control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable',
+    });
+    response.end(content);
+  } catch {
+    response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+    response.end('Not found');
+  }
+}
+
 http.createServer(handleRequest).listen(port, () => {
-  console.log(`Despacha API listening on http://127.0.0.1:${port}`);
+  console.log(`Despacha API + Frontend listening on http://127.0.0.1:${port}`);
 });
