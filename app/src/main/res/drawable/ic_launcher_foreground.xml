@@ -1,0 +1,36 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Top stroke (Light Blue) -->
+    <path
+        android:strokeColor="#00B4FF"
+        android:strokeWidth="12"
+        android:strokeLineCap="round"
+        android:pathData="M 18,34 L 40,34" />
+
+    <!-- Middle Arrow (Orange) -->
+    <path
+        android:strokeColor="#FF8A00"
+        android:strokeWidth="12"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 28,54 L 60,54 L 46,40 M 60,54 L 46,68" />
+
+    <!-- Bottom stroke (White) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="12"
+        android:strokeLineCap="round"
+        android:pathData="M 18,74 L 46,74" />
+
+    <!-- D Curve (White) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="12"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 46,34 L 60,34 A 20,20 0 0,1 60,74 L 46,74" />
+</vector>

@@ -1,0 +1,6 @@
+{
+  "name": "Despacha",
+  "description": "Sistema de Pedidos Automáticos para Gás e Água",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

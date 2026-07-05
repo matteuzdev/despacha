@@ -1,0 +1,10 @@
+backend/
+node_modules/
+.env
+.env.example
+nul
+*.local
+webapp/.vercel/
+webapp/dist/
+webapp/output.txt
+webapp/node_modules/
