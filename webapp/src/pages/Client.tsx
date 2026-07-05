@@ -1,15 +1,17 @@
 import type { CSSProperties, FormEvent } from 'react';
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Heart, Home, Minus, Plus, Receipt, ShoppingCart } from 'lucide-react';
 import DespachaLogo from '../components/DespachaLogo';
-import type { Neighborhood, Order } from '../store/db';
+import type { Neighborhood, Order, Product, Tenant } from '../store/db';
 import { formatCurrency, formatDateTime, phoneMask, useAppStore } from '../store/db';
+import { api } from '../store/api';
 
 type ClientTab = 'catalog' | 'favorites' | 'history' | 'cart' | 'checkout' | 'success';
 
 const Client = () => {
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug?: string }>();
   const {
     tenants,
     products,
@@ -21,9 +23,66 @@ const Client = () => {
     placeOrder,
   } = useAppStore();
   const [tab, setTab] = useState<ClientTab>('catalog');
-  const tenant = tenants[0];
-  const tenantProducts = products.filter((product) => product.tenantId === tenant.id && product.isAvailable);
-  const tenantNeighborhoods = neighborhoods.filter((neighborhood) => neighborhood.tenantId === tenant.id && neighborhood.status !== 'unavailable');
+  const [slugTenant, setSlugTenant] = useState<{ tenant: Tenant; products: Product[]; neighborhoods: Neighborhood[] } | null>(null);
+  const [slugLoading, setSlugLoading] = useState(true);
+  const [slugError, setSlugError] = useState('');
+
+  // Se tem slug na URL, carrega dados daquele tenant via API
+  useEffect(() => {
+    if (slug) {
+      setSlugLoading(true);
+      setSlugError('');
+      api.getTenantBySlug(slug)
+        .then((data) => {
+          setSlugTenant(data);
+          setSlugLoading(false);
+        })
+        .catch((err) => {
+          setSlugError(err.message || 'Loja não encontrada');
+          setSlugLoading(false);
+        });
+    } else {
+      // Sem slug? tenta pegar o primeiro tenant (fallback pra /client)
+      if (tenants.length > 0) {
+        const first = tenants[0];
+        setSlugTenant({
+          tenant: first,
+          products: products.filter((p) => p.tenantId === first.id && p.isAvailable),
+          neighborhoods: neighborhoods.filter((n) => n.tenantId === first.id && n.status !== 'unavailable'),
+        });
+      }
+      setSlugLoading(false);
+    }
+  }, [slug, tenants, products, neighborhoods]);
+
+  if (slugLoading) {
+    return (
+      <main className="screen center-screen">
+        <div className="surface stack narrow center-text" style={{ padding: 32 }}>
+          <div className="spin" style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', margin: '0 auto' }} />
+          <p className="muted">Carregando loja...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (slugError || !slugTenant) {
+    return (
+      <main className="screen center-screen">
+        <div className="surface stack narrow center-text">
+          <h2>Loja não encontrada</h2>
+          <p className="muted">{slugError || 'O link que você acessou não existe.'}</p>
+          <button className="btn btn-primary" onClick={() => navigate('/')}>
+            Voltar para o início
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  const tenant = slugTenant.tenant;
+  const tenantProducts = slugTenant.products || [];
+  const tenantNeighborhoods = slugTenant.neighborhoods || [];
   const tenantOrders = orders.filter((order) => order.tenantId === tenant.id);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const showStoreHeader = tab === 'catalog' || tab === 'favorites' || tab === 'history';

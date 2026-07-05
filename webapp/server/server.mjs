@@ -39,8 +39,8 @@ const seedUsers = [
 const seedState = {
   users: seedUsers,
   tenants: [
-    { id: 1, name: 'Depósito do João', plan: 'PRO', status: 'Ativo', ownerEmail: 'joao@exemplo.com', businessName: 'Depósito do João Gás & Água', address: 'Rua Principal, 123', colorHex: '#ff5722', secondaryColorHex: '#00b4ff', createdAt: seedTime },
-    { id: 2, name: 'Gás Rápido Centro', plan: 'FREE', status: 'Ativo', ownerEmail: 'gas@exemplo.com', businessName: 'Gás Rápido', address: 'Av. Américas, 900', colorHex: '#2196f3', secondaryColorHex: '#ff8a00', createdAt: seedTime },
+    { id: 1, name: 'Depósito do João', slug: 'deposito-do-joao', plan: 'PRO', status: 'Ativo', ownerEmail: 'joao@exemplo.com', businessName: 'Depósito do João Gás & Água', address: 'Rua Principal, 123', colorHex: '#ff5722', secondaryColorHex: '#00b4ff', isMrr: true, createdAt: seedTime },
+    { id: 2, name: 'Gás Rápido Centro', slug: 'gas-rapido-centro', plan: 'FREE', status: 'Ativo', ownerEmail: 'gas@exemplo.com', businessName: 'Gás Rápido', address: 'Av. Américas, 900', colorHex: '#2196f3', secondaryColorHex: '#ff8a00', isMrr: true, createdAt: seedTime },
   ],
   products: [
     { id: 1, name: 'Botijão P13 Cheio', description: 'Gás de cozinha 13kg com casco incluso.', price: 110, category: 'Gás', imageUrl: '', isAvailable: true, isFavorite: false, isOrderBump: false, tenantId: 1 },
@@ -62,6 +62,26 @@ const seedState = {
 // ── Helpers ──────────────────────────────────────────────
 const nextId = () => Date.now() + Math.floor(Math.random() * 1000);
 const money = (value) => Math.round(value * 100) / 100;
+
+function generateSlug(name) {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .trim() || 'loja';
+}
+
+function ensureUniqueSlug(slug, state, excludeId) {
+  let candidate = slug;
+  let counter = 1;
+  while (state.tenants.some((t) => t.slug === candidate && t.id !== excludeId)) {
+    candidate = `${slug}-${counter}`;
+    counter++;
+  }
+  return candidate;
+}
 
 async function ensureDataFile() {
   await fsp.mkdir(dataDir, { recursive: true });
@@ -129,6 +149,20 @@ async function handleRequest(request, response) {
       return;
     }
 
+    // Get tenant by slug (público, sem auth)
+    const slugMatch = pathname.match(/^\/api\/tenants\/slug\/([a-z0-9-]+)$/);
+    if (slugMatch && request.method === 'GET') {
+      const slug = slugMatch[1];
+      const tenant = state.tenants.find((t) => t.slug === slug);
+      if (!tenant) { send(response, 404, { error: 'Loja não encontrada' }); return; }
+      send(response, 200, {
+        tenant,
+        products: state.products.filter((p) => p.tenantId === tenant.id && p.isAvailable),
+        neighborhoods: state.neighborhoods.filter((n) => n.tenantId === tenant.id && n.status !== 'unavailable'),
+      });
+      return;
+    }
+
     // Get full state (for hydrate)
     if (request.method === 'GET' && pathname === '/api/state') {
       send(response, 200, {
@@ -175,6 +209,7 @@ async function handleRequest(request, response) {
       const tenant = {
         id: tenantId,
         name,
+        slug: ensureUniqueSlug(generateSlug(name), state),
         plan: 'FREE',
         status: 'Ativo',
         ownerEmail: email,
@@ -182,6 +217,7 @@ async function handleRequest(request, response) {
         address: '',
         colorHex: '#ff5722',
         secondaryColorHex: '#00b4ff',
+        isMrr: false,
         createdAt: now,
       };
 
@@ -205,7 +241,7 @@ async function handleRequest(request, response) {
 
     // SUPERADMIN: cria tenant + user com senha
     if (request.method === 'POST' && pathname === '/api/superadmin/tenant-user') {
-      const { name, email, password, plan = 'PRO', status = 'Ativo' } = await readBody(request);
+      const { name, email, password, plan = 'PRO', status = 'Ativo', isMrr = true } = await readBody(request);
       if (!name || !email || !password) {
         send(response, 400, { error: 'Nome, email e senha são obrigatórios' });
         return;
@@ -218,6 +254,7 @@ async function handleRequest(request, response) {
       const tenant = {
         id: tenantId,
         name,
+        slug: ensureUniqueSlug(generateSlug(name), state),
         plan,
         status,
         ownerEmail: email,
@@ -225,6 +262,7 @@ async function handleRequest(request, response) {
         address: 'Endereço não informado',
         colorHex: '#ff5722',
         secondaryColorHex: '#00b4ff',
+        isMrr,
         createdAt: now,
       };
 
@@ -270,7 +308,12 @@ async function handleRequest(request, response) {
     const tenantIdParam = routeParam(pathname, '/api/tenants/');
     if (tenantIdParam && request.method === 'PUT') {
       const tenant = await readBody(request);
-      state.tenants = state.tenants.map((item) => (item.id === tenantIdParam ? { ...tenant, id: tenantIdParam } : item));
+      let updated = { ...tenant, id: tenantIdParam };
+      // Se mudou o nome, atualiza o slug também
+      if (tenant.name && tenant.name !== state.tenants.find((t) => t.id === tenantIdParam)?.name) {
+        updated.slug = ensureUniqueSlug(generateSlug(tenant.name), state, tenantIdParam);
+      }
+      state.tenants = state.tenants.map((item) => (item.id === tenantIdParam ? updated : item));
       await writeState(state);
       send(response, 200, state.tenants.find((item) => item.id === tenantIdParam));
       return;

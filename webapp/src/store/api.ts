@@ -37,11 +37,13 @@ function remove(path: string) {
 
 export const api = {
   getState: () => request<BackendState>('/api/state'),
+  getTenantBySlug: (slug: string) =>
+    request<{ tenant: Tenant; products: Product[]; neighborhoods: Neighborhood[] }>(`/api/tenants/slug/${slug}`),
   login: (email: string, password: string) => post<{ user: User }>('/api/auth/login', { email, password }),
   register: (name: string, email: string, password: string) =>
     post<{ user: User; tenant: Tenant }>('/api/auth/register', { name, email, password }),
-  superAdminCreateTenantUser: (name: string, email: string, password: string, plan: string) =>
-    post<{ user: User; tenant: Tenant }>('/api/superadmin/tenant-user', { name, email, password, plan }),
+  superAdminCreateTenantUser: (name: string, email: string, password: string, plan: string, isMrr?: boolean) =>
+    post<{ user: User; tenant: Tenant }>('/api/superadmin/tenant-user', { name, email, password, plan, isMrr }),
   createUser: (user: Partial<User> & { name: string; email: string; passwordHash: string }) =>
     post<User>('/api/users', user),
   createTenant: (tenant: Omit<Tenant, 'id' | 'createdAt'>) =>

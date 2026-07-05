@@ -44,6 +44,8 @@ const Admin = () => {
   const tenantId = currentUser?.tenantId;
   const tenant = tenantId ? tenants.find((item) => item.id === tenantId) : undefined;
 
+  const storeSlug = tenant?.slug || 'loja';
+
   const closeOnboarding = () => {
     setShowOnboarding(false);
     if (currentUser) {
@@ -188,7 +190,7 @@ const Admin = () => {
       </section>
 
       {showOnboarding && (
-        <OnboardingWizard onDone={closeOnboarding} onGoToTab={(t) => { closeOnboarding(); setTab(t); }} />
+        <OnboardingWizard onDone={closeOnboarding} onGoToTab={(t) => { closeOnboarding(); setTab(t); }} storeSlug={storeSlug} />
       )}
     </main>
   );
@@ -228,14 +230,14 @@ const ONBOARDING_STEPS = [
   },
 ];
 
-const OnboardingWizard = ({ onDone, onGoToTab }: { onDone: () => void; onGoToTab: (tab: AdminTab) => void }) => {
+const OnboardingWizard = ({ onDone, onGoToTab, storeSlug }: { onDone: () => void; onGoToTab: (tab: AdminTab) => void; storeSlug: string }) => {
   const [step, setStep] = useState(0);
   const [copied, setCopied] = useState(false);
   const current = ONBOARDING_STEPS[step];
 
   const handleAction = () => {
     if ('copyLink' in current && current.copyLink) {
-      navigator.clipboard.writeText(`${window.location.origin}/client`).then(() => {
+      navigator.clipboard.writeText(`${window.location.origin}/${storeSlug}`).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       });

@@ -10,6 +10,7 @@ const SuperAdmin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [plan, setPlan] = useState<'FREE' | 'PRO' | 'TRIANNUAL' | 'ANNUAL' | 'VITALICIA'>('PRO');
+  const [isMrr, setIsMrr] = useState(true);
   const [deletingTenant, setDeletingTenant] = useState<{ id: number; name: string } | null>(null);
   const [confirmName, setConfirmName] = useState('');
   const [navCollapsed, setNavCollapsed] = useState(false);
@@ -50,7 +51,7 @@ const SuperAdmin = () => {
           <p className="muted">Controle tenants, planos e receita estimada do Despacha.</p>
         </div>
 
-        <div className="metric-grid">
+        <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           <div className="surface metric-card">
             <span>Tenants Ativos</span>
             <strong>{tenants.length}</strong>
@@ -59,19 +60,22 @@ const SuperAdmin = () => {
             <span>MRR Estimado</span>
             <strong>{formatCurrency(mrr)}</strong>
           </div>
-        </div>
-
-        <form
+          <div className="surface metric-card">
+            <span>Não-MRR (Grátis)</span>
+            <strong style={{ color: 'var(--text-muted)' }}>{tenants.filter((t) => !t.isMrr).length}</strong>
+          </div>
+        </div>          <form
           className="surface form-grid"
           onSubmit={async (event) => {
             event.preventDefault();
             if (!name.trim() || !email.trim() || !password.trim()) return;
             try {
-              await addTenant({ name, email, password, plan });
+              await addTenant({ name, email, password, plan, isMrr });
               setName('');
               setEmail('');
               setPassword('');
               setPlan('PRO');
+              setIsMrr(true);
             } catch (error) {
               alert(error instanceof Error ? error.message : 'Erro ao criar tenant');
             }
@@ -87,6 +91,10 @@ const SuperAdmin = () => {
             <option value="VITALICIA">🔥 VITALÍCIA (R$ 999,00) · Sob consulta</option>
             <option value="FREE">FREE (Teste)</option>
           </select>
+          <label className="check-line">
+            <input type="checkbox" checked={isMrr} onChange={(event) => setIsMrr(event.target.checked)} />
+            Incluir no MRR (receita mensal recorrente)
+          </label>
           <button className="btn btn-primary" type="submit"><Plus size={18} /> Adicionar</button>
         </form>
 
@@ -96,7 +104,11 @@ const SuperAdmin = () => {
             <article className="surface list-row" key={tenant.id}>
               <div>
                 <strong>{tenant.name}</strong>
-                <p className="muted">Plano {tenant.plan} · {tenant.ownerEmail}</p>
+                <p className="muted" style={{ fontSize: '0.82rem' }}>
+                  <code style={{ background: 'var(--surface-soft)', padding: '2px 6px', borderRadius: 4 }}>{tenant.slug}</code>
+                  {' · '}Plano {tenant.plan} · {tenant.ownerEmail}
+                  {!tenant.isMrr && <span className="status-chip" style={{ marginLeft: 6, background: '#fef3c7', color: '#92400e' }}>Grátis</span>}
+                </p>
               {tenant.plan === 'VITALICIA' && <span className="status-chip" style={{ background: '#fef3c7', color: '#92400e' }}>⭐ Vitalício</span>}
               </div>
               <div className="row-actions">

@@ -112,6 +112,7 @@ export interface User {
 export interface Tenant {
   id: number;
   name: string;
+  slug: string;
   plan: 'FREE' | 'PRO' | 'TRIANNUAL' | 'ANNUAL' | 'VITALICIA';
   status: string;
   ownerEmail: string;
@@ -121,7 +122,18 @@ export interface Tenant {
   secondaryColorHex?: string;
   logoUrl?: string;
   coverUrl?: string;
+  isMrr?: boolean;
   createdAt: number;
+}
+
+export function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .trim() || 'loja';
 }
 
 export interface Product {
@@ -200,7 +212,7 @@ interface AppState {
   login: (email: string, pass: string) => Promise<User | null>;
   logout: () => void;
   registerUser: (name: string, email: string, password: string) => Promise<User>;
-  addTenant: (params: { name: string; email: string; password: string; plan: string }) => Promise<void>;
+  addTenant: (params: { name: string; email: string; password: string; plan: string; isMrr?: boolean }) => Promise<void>;
   updateTenant: (tenant: Tenant) => void;
   deleteTenant: (id: number) => void;
   insertProduct: (product: Omit<Product, 'id'>) => void;
@@ -286,12 +298,13 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   // ── SuperAdmin cria tenant + user ───────────────────
-  addTenant: async ({ name, email, password, plan }) => {
+  addTenant: async ({ name, email, password, plan, isMrr }) => {
     const { user, tenant } = await api.superAdminCreateTenantUser(
       name,
       email,
       password,
       plan,
+      isMrr,
     );
     set((state) => ({
       tenants: [...state.tenants, tenant],

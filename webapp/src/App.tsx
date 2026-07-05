@@ -64,6 +64,8 @@ function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/superadmin" element={<SuperAdmin />} />
           <Route path="/client" element={<Client />} />
+          <Route path="/:slug/client" element={<Client />} />
+          <Route path="/:slug" element={<Client />} />
           <Route path="/delivery" element={<Delivery />} />
         </Routes>
       </div>

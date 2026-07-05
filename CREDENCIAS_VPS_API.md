@@ -10,10 +10,17 @@ _Atualizado em: Julho 2026_
 ## 🔗 GitHub
 
 - **Conta:** `matteuzdev`
+- **Token:** (removido do versionamento por segurança)
 
 ## 🔗 Render
 
-- **Conta:** Criar Web Service em `https://dashboard.render.com`
+- **API Key:** (removido do versionamento por segurança)
+
+## 🔗 Cakto
+
+- **Client ID:** (removido do versionamento por segurança)
+- **Client Secret:** (removido do versionamento por segurança)
+- **Webhook Secret:** (removido do versionamento por segurança)
 
 ---
 
@@ -29,3 +36,6 @@ _Atualizado em: Julho 2026_
    - `VITE_CAKTO_CHECKOUT_TRIANNUAL=https://pay.cakto.com.br/38cqwwk`
    - `VITE_CAKTO_CHECKOUT_ANNUAL=https://pay.cakto.com.br/owgba8w`
    - `VITE_CAKTO_CHECKOUT_VITALICIA=https://pay.cakto.com.br/vzev5xn`
+   - `CAKTO_CLIENT_ID=X4RN78S7gfYX2GSsXJvrCpmSLkGGaoTEBjASlu8V`
+   - `CAKTO_CLIENT_SECRET=dmNtGEBqzfglZbTiYqKVduF0vT3DUSAbJMP79eECnDrxNOcyWz4YeWIlzoaqWt45LpxBFPr37CI1N656ZuQ9dveKjupfe6KMaPQcCErcs3fQURf2fUH69pYipZH2K9Ui`
+   - `CAKTO_WEBHOOK_SECRET=despacha.webhook159753`
