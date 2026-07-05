@@ -64,8 +64,8 @@ const nextId = () => Date.now() + Math.floor(Math.random() * 1000);
 const money = (value) => Math.round(value * 100) / 100;
 
 async function ensureDataFile() {
-  await fs.mkdir(dataDir, { recursive: true });
-  try { await fs.access(dataFile); }
+  await fsp.mkdir(dataDir, { recursive: true });
+  try { await fsp.access(dataFile); }
   catch { await writeState(seedState); }
 }
 
