@@ -97,8 +97,8 @@ const Client = () => {
           <CheckoutForm
             neighborhoods={tenantNeighborhoods}
             onBack={() => setTab('cart')}
-            onSubmit={(payload) => {
-              const order = placeOrder(payload, tenant.id);
+            onSubmit={async (payload) => {
+              const order = await placeOrder(payload, tenant.id);
               if (order) setTab('success');
             }}
           />
@@ -135,7 +135,7 @@ interface CatalogProps {
 
 const Catalog = ({ title, emptyText = 'Nenhum produto disponível.', products, onAdd, onToggleFavorite }: CatalogProps) => {
   const grouped = useMemo(() => products.reduce<Record<string, typeof products>>((acc, product) => {
-    acc[product.category] = [...(acc[product.category] ?? []), product];
+    (acc[product.category] = acc[product.category] ?? []).push(product);
     return acc;
   }, {}), [products]);
 

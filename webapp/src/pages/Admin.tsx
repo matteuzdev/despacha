@@ -1,9 +1,9 @@
 import type { CSSProperties, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Fragment, useState } from 'react';
-import { BookOpen, Check, ClipboardList, CreditCard, Crown, HelpCircle, Info, Lightbulb, MapPin, Package, Palette, Plus, Send, Settings, ShoppingCart, Store, Trash2, Users, X, Smartphone, ExternalLink, Sparkles, TrendingUp, Clock, LayoutGrid, List } from 'lucide-react';
+import { BookOpen, Check, ClipboardList, CreditCard, Crown, HelpCircle, Info, Lightbulb, MapPin, Package, Palette, Plus, Send, Store, Trash2, Users, X, Smartphone, ExternalLink, Sparkles, TrendingUp, Clock, LayoutGrid, List } from 'lucide-react';
 import type { Customer, Neighborhood, NeighborhoodStatus, Product } from '../store/db';
-import { campaignTexts, extractCustomers, formatCurrency, formatPhone, useAppStore, whatsAppUrl } from '../store/db';
+import { campaignTexts, extractCustomers, formatCurrency, useAppStore, whatsAppUrl } from '../store/db';
 import DespachaLogo from '../components/DespachaLogo';
 
 type AdminTab = 'dashboard' | 'products' | 'neighborhoods' | 'customers' | 'settings' | 'help' | 'plans';
@@ -142,7 +142,7 @@ const Admin = () => {
           </>
         )}
 
-        {tab === 'products' && (
+        {tab === 'products' && tenantId && (
           <ProductManager
             tenantId={tenantId}
             products={tenantProducts}
@@ -155,11 +155,10 @@ const Admin = () => {
         {tab === 'customers' && tenantId && (
           <CustomerManager
             orders={tenantOrders}
-            tenantName={tenant?.businessName ?? 'Loja'}
           />
         )}
 
-        {tab === 'neighborhoods' && (
+        {tab === 'neighborhoods' && tenantId && (
           <NeighborhoodManager
             tenantId={tenantId}
             neighborhoods={tenantNeighborhoods}
@@ -283,7 +282,7 @@ const OnboardingWizard = ({ onDone, onGoToTab }: { onDone: () => void; onGoToTab
 // ── Help Center / Tutoriais ──────────────────────────────
 
 interface TutorialCard {
-  icon: JSX.Element;
+  icon: React.ReactNode;
   title: string;
   summary: string;
   steps: string[];
@@ -524,7 +523,7 @@ const PlansManager = ({ tenant }: { tenant: ReturnType<typeof useAppStore.getSta
 
 // ── Customer / Campaign Manager ─────────────────────────
 
-const CustomerManager = ({ orders, tenantName }: { orders: ReturnType<typeof useAppStore.getState>['orders']; tenantName: string }) => {
+const CustomerManager = ({ orders }: { orders: ReturnType<typeof useAppStore.getState>['orders'] }) => {
   const [search, setSearch] = useState('');
   const [campaignClient, setCampaignClient] = useState<Customer | null>(null);
   const [customText, setCustomText] = useState('');
@@ -539,7 +538,6 @@ const CustomerManager = ({ orders, tenantName }: { orders: ReturnType<typeof use
   const warm = customers.filter((c) => c.lastOrderDays > 15 && c.lastOrderDays <= 30).length;
 
   const selectCampaign = (customer: Customer) => {
-    const lastProduct = customer.lastOrder.items[0]?.productName;
     setCampaignClient(customer);
     setCustomText('');
     setSelectedIntent('');
