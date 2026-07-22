@@ -66,10 +66,12 @@ const money = (value) => Math.round(value * 100) / 100;
 function generateSlug(name) {
   return name
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')  // Remove acentos (combining diacritical marks)
+    .replace(/[^\w\s-]/g, '')          // Remove caracteres especiais restantes (&, etc)
+    .replace(/[\s_]+/g, '-')            // Espaços viram hífens
+    .replace(/-+/g, '-')                 // Remove hífens duplicados
+    .replace(/^-|-$/g, '')               // Remove hífens nas pontas
     .trim() || 'loja';
 }
 
@@ -91,7 +93,18 @@ async function ensureDataFile() {
 
 async function readState() {
   await ensureDataFile();
-  return JSON.parse(await fsp.readFile(dataFile, 'utf8'));
+  const state = JSON.parse(await fsp.readFile(dataFile, 'utf8'));
+  // Migração: garante que todo tenant tenha slug
+  let needsWrite = false;
+  state.tenants = state.tenants.map((t) => {
+    if (!t.slug) {
+      needsWrite = true;
+      return { ...t, slug: ensureUniqueSlug(generateSlug(t.name || t.businessName), state, t.id) };
+    }
+    return t;
+  });
+  if (needsWrite) await writeState(state);
+  return state;
 }
 
 async function writeState(state) {
@@ -308,10 +321,13 @@ async function handleRequest(request, response) {
     const tenantIdParam = routeParam(pathname, '/api/tenants/');
     if (tenantIdParam && request.method === 'PUT') {
       const tenant = await readBody(request);
+      const current = state.tenants.find((t) => t.id === tenantIdParam);
       let updated = { ...tenant, id: tenantIdParam };
-      // Se mudou o nome, atualiza o slug também
-      if (tenant.name && tenant.name !== state.tenants.find((t) => t.id === tenantIdParam)?.name) {
-        updated.slug = ensureUniqueSlug(generateSlug(tenant.name), state, tenantIdParam);
+      // Gera slug se não existir, ou se o nome mudou
+      const nameChanged = tenant.name && current && tenant.name !== current.name;
+      if (!updated.slug || nameChanged) {
+        const baseName = tenant.name || tenant.businessName || 'loja';
+        updated.slug = ensureUniqueSlug(generateSlug(baseName), state, tenantIdParam);
       }
       state.tenants = state.tenants.map((item) => (item.id === tenantIdParam ? updated : item));
       await writeState(state);

@@ -129,10 +129,12 @@ export interface Tenant {
 export function generateSlug(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')  // Remove acentos (combining diacritical marks)
+    .replace(/[^\w\s-]/g, '')          // Remove caracteres especiais restantes
+    .replace(/[\s_]+/g, '-')            // Espaços viram hífens
+    .replace(/-+/g, '-')                 // Remove hífens duplicados
+    .replace(/^-|-$/g, '')               // Remove hífens nas pontas
     .trim() || 'loja';
 }
 

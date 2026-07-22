@@ -890,6 +890,8 @@ const TenantSettings = ({ tenant, onSave }: TenantSettingsProps) => {
   const [secondaryColorHex, setSecondaryColorHex] = useState(tenant.secondaryColorHex ?? '#00b4ff');
   const [logoUrl, setLogoUrl] = useState(tenant.logoUrl ?? '');
   const [coverUrl, setCoverUrl] = useState(tenant.coverUrl ?? '');
+  const [linkCopied, setLinkCopied] = useState(false);
+  const storeUrl = `${window.location.origin}/${tenant.slug}`;
   const readImage = (file: File | undefined, onLoad: (value: string) => void) => {
     if (!file) return;
     const reader = new FileReader();
@@ -904,6 +906,37 @@ const TenantSettings = ({ tenant, onSave }: TenantSettingsProps) => {
       event.preventDefault();
       onSave(businessName, address, colorHex, secondaryColorHex, logoUrl || undefined, coverUrl || undefined);
     }}>
+      {/* Link da Loja */}
+      <div className="surface" style={{ border: '2px solid var(--primary)', padding: 16, background: 'rgba(255,87,34,0.04)' }}>
+        <div className="subheader">
+          <Smartphone size={20} />
+          <div>
+            <h3 style={{ margin: 0 }}>Link da Sua Loja</h3>
+            <p className="muted" style={{ fontSize: '0.84rem', margin: 0 }}>Compartilhe este link com seus clientes no WhatsApp!</p>
+          </div>
+        </div>
+        <div className="button-row" style={{ marginTop: 8 }}>
+          <code style={{
+            flex: 1, padding: '8px 12px', background: 'var(--surface-soft)',
+            borderRadius: 'var(--radius)', fontSize: '0.9rem',
+            wordBreak: 'break-all',
+          }}>
+            {storeUrl}
+          </code>
+          <button type="button" className="btn btn-primary" onClick={() => {
+            navigator.clipboard.writeText(storeUrl).then(() => {
+              setLinkCopied(true);
+              setTimeout(() => setLinkCopied(false), 2000);
+            });
+          }}>
+            {linkCopied ? '✅ Copiado!' : 'Copiar'}
+          </button>
+        </div>
+        <p className="muted" style={{ fontSize: '0.78rem', marginTop: 6 }}>
+          Slug: <strong>{tenant.slug}</strong> · Personalize alterando o nome do negócio
+        </p>
+      </div>
+
       {/* Personalização */}
       <div>
         <h2>Personalização da Loja</h2>

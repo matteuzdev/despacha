@@ -50,6 +50,7 @@
     {
       "id": 1,
       "name": "Gás & Água Total Distribuidora",
+      "slug": "gas-agua-total-distribuidora",
       "plan": "PRO",
       "status": "Ativo",
       "ownerEmail": "joao@exemplo.com",

@@ -1,4 +1,8 @@
-backend/
+backend/.venv/
+backend/__pycache__/
+backend/*.db
+backend/*.sqlite3
+backend/alembic/versions/__pycache__/
 node_modules/
 .env
 .env.example
